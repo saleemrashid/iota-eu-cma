@@ -2,6 +2,8 @@ package main
 
 import (
 	"bufio"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"os"
 
@@ -46,6 +48,22 @@ func SignBundle(key giota.Trytes, bundle giota.Bundle) []giota.Trytes {
 	return []giota.Trytes{sign0, sign1}
 }
 
+func BundleTrytes(bundle giota.Bundle) giota.Trytes {
+	trytesFrom := ""
+
+	for _, txn := range bundle {
+		trytesFrom += string(txn.Trytes())
+	}
+
+	return giota.Trytes(trytesFrom)
+}
+
+func Sha256Trytes(trytes giota.Trytes) string {
+	hash := sha256.Sum256([]byte(trytes))
+
+	return hex.EncodeToString(hash[:])
+}
+
 func VerifyBundle(name string, address giota.Address, signatureFragments []giota.Trytes, bundle giota.Bundle) {
 	var validity string
 
@@ -55,7 +73,11 @@ func VerifyBundle(name string, address giota.Address, signatureFragments []giota
 		validity = "invalid"
 	}
 
-	fmt.Printf("Verifying %s bundle: %s\n", name, validity)
+	fmt.Println()
+	fmt.Printf("Verifying %s bundle:\n", name)
+	fmt.Printf("SHA-256 hash is %s\n", Sha256Trytes(BundleTrytes(bundle)))
+	fmt.Printf("Curl-P hash is %s\n", bundle.Hash())
+	fmt.Printf("Signature is %s!\n", validity)
 }
 
 func main() {
